@@ -1,0 +1,15 @@
+services:
+  web:
+    image: nginx:alpine
+    container_name: portfolio_site
+    ports:
+      - "8080:80"
+    restart: always
+    networks:
+      - chuck
+    volumes:
+      - ./:/usr/share/nginx/html # Bind current folder to Nginx
+
+networks:
+  chuck:
+    driver: bridge
