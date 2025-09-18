@@ -1,6 +1,11 @@
 pipeline {
     agent any
 
+    options {
+        // Clean the workspace at the start of each build
+        wipeWorkspace()
+    }
+
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
