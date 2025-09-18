@@ -1,8 +1,15 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            // Docker image that has Docker CLI inside
+            image 'docker:24.0.7'  
+            // Mount the host Docker socket so CLI inside can talk to Docker daemon
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')  // Jenkins credentials ID
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
     }
 
@@ -15,26 +22,23 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE:latest .'
-                }
+                sh 'docker build -t $DOCKER_IMAGE:latest .'
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                script {
-                    sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
-                }
+                sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                script {
-                    sh 'docker push $DOCKER_IMAGE:latest'
-                }
+                sh 'docker push $DOCKER_IMAGE:latest'
             }
+        }
+    }
+}            }
         }
     }
 }
