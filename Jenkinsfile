@@ -1,12 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            // Use a Docker image with Docker CLI installed
-            image 'docker:24.0.7'  
-            // Mount host Docker socket so CLI can talk to Docker daemon
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any  // Run on the default Jenkins node (with host Docker mounted)
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
@@ -22,12 +15,14 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                // Build Docker image using host Docker
                 sh 'docker build -t ${DOCKER_IMAGE}:v3-jenkins-pushed .'
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
+                // Login using stored credentials
                 sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
             }
         }
@@ -41,6 +36,7 @@ pipeline {
 
     post {
         always {
+            // Logout Docker to avoid leaving credentials
             sh 'docker logout || true'
         }
     }
