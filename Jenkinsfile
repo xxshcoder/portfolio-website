@@ -1,15 +1,13 @@
 pipeline {
     agent {
         docker {
-            // Docker image that has Docker CLI inside
-            image 'docker:24.0.7'
-            // Mount the host Docker socket so CLI inside can talk to Docker daemon
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            image 'docker:24.0.7' // Docker image with Docker CLI
+            args '-v /var/run/docker.sock:/var/run/docker.sock --user root' // Mount Docker socket and run as root to avoid permission issues
         }
     }
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // Docker Hub credentials
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
     }
 
@@ -22,20 +20,26 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:v3-jenkind-pushed .'
+                sh 'docker build -t ${DOCKER_IMAGE}:v3-jenkins-pushed .'
             }
         }
 
         stage('Login to Docker Hub') {
             steps {
-                sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                sh 'docker push $DOCKER_IMAGE:latest'
+                sh 'docker push ${DOCKER_IMAGE}:v3-jenkins-pushed'
             }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout' // Log out from Docker Hub to avoid credential leaks
         }
     }
 }
