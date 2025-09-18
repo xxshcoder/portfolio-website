@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             // Docker image that has Docker CLI inside
-            image 'docker:24.0.7'  
+            image 'docker:24.0.7'
             // Mount the host Docker socket so CLI inside can talk to Docker daemon
             args '-v /var/run/docker.sock:/var/run/docker.sock'
         }
@@ -22,7 +22,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:v3-jenkins-pushed .'
+                sh 'docker build -t $DOCKER_IMAGE:v3-jenkind-pushed .'
             }
         }
 
@@ -36,9 +36,6 @@ pipeline {
             steps {
                 sh 'docker push $DOCKER_IMAGE:latest'
             }
-        }
-    }
-}            }
         }
     }
 }
