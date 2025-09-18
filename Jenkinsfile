@@ -5,15 +5,6 @@ pipeline {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
     }
-
-    stages {
-        stage('Clean Workspace') {
-            steps {
-                // Deletes all files in the workspace
-                deleteDir()
-            }
-        }
-
         stage('Checkout Code') {
             steps {
                 git branch: 'main', url: 'https://github.com/xxshcoder/portfolio-website.git'
