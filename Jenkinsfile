@@ -1,13 +1,8 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:24.0.7' // Docker image with Docker CLI
-            args '-v /var/run/docker.sock:/var/run/docker.sock --user root' // Mount Docker socket and run as root to avoid permission issues
-        }
-    }
+    agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds') // Docker Hub credentials
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
     }
 
@@ -39,7 +34,7 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout' // Log out from Docker Hub to avoid credential leaks
+            sh 'docker logout'
         }
     }
 }
