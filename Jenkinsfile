@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "xxshcoder/portfolio-website"
+        DOCKER_IMAGE = "xxshcoder/portfolio-website:v3-jenkins-pushed"
     }
 
     stages {
