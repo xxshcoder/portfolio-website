@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'docker:24.0.7-cli'   // ephemeral container with Docker CLI
+            args '-v /var/run/docker.sock:/var/run/docker.sock'  // give it access to host Docker
+        }
+    }
 
     environment {
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
