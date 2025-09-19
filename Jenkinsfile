@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = "xxshcoder/portfolio-website:v3-jenkins-pushed"
+        DOCKER_IMAGE = "xxshcoder/portfolio-website"
     }
 
     stages {
@@ -14,7 +14,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE:v3-jenkins-pushed .'
+                sh 'docker build -t $DOCKER_IMAGE:latest .'
             }
         }
 
@@ -28,7 +28,7 @@ pipeline {
 
         stage('Push to Docker Hub') {
             steps {
-                sh 'docker push $DOCKER_IMAGE:v3-docker-pushed'
+                sh 'docker push $DOCKER_IMAGE:latest'
             }
         }
     }
