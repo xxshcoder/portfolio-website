@@ -1,5 +1,10 @@
 pipeline {
-    agent any   // run on any Jenkins agent where Docker CLI is installed
+    agent {
+        docker {
+            image 'docker:24.0.2' // official Docker CLI image
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
