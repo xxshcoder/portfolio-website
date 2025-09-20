@@ -1,9 +1,14 @@
 pipeline {
-    agent none // Run on the default Jenkins node
+    agent {
+        docker {
+            image 'docker:24.0.2'
+            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999' // Replace 999 with the host's docker group GID
+        }
+    }
 
     environment {
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
-        DOCKER_CONFIG = "${WORKSPACE}/.docker" // Ensure Docker config is in a writable directory
+        DOCKER_CONFIG = "${WORKSPACE}/.docker" // Avoid permission issues with /.docker
     }
 
     stages {
