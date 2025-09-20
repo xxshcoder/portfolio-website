@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
-        DOCKER_CONFIG = "${WORKSPACE}/.docker"
+        DOCKER_TAG   = "latest"
     }
 
     stages {
@@ -14,25 +14,12 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            agent {
-                docker {
-                    image 'docker:24.0.2'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999'
-                }
-            }
             steps {
-                sh 'mkdir -p ${WORKSPACE}/.docker'
-                sh 'docker build -t $DOCKER_IMAGE:latest .'
+                sh 'docker build -t $DOCKER_IMAGE:$DOCKER_TAG .'
             }
         }
 
         stage('Login to Docker Hub') {
-            agent {
-                docker {
-                    image 'docker:24.0.2'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999'
-                }
-            }
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
@@ -40,55 +27,31 @@ pipeline {
             }
         }
 
-        stage('Push to Docker Hub') {
-            agent {
-                docker {
-                    image 'docker:24.0.2'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999'
-                }
-            }
+        stage('Push Docker Image') {
             steps {
-                sh 'docker push $DOCKER_IMAGE:latest'
+                sh 'docker push $DOCKER_IMAGE:$DOCKER_TAG'
             }
         }
 
         stage('Deploy to Minikube') {
-            agent {
-                docker {
-                    image 'bitnami/kubectl:latest'
-                    args '-v $HOME/.kube:/root/.kube -v $HOME/.minikube:/root/.minikube'
-                }
-            }
             steps {
-                script {
-                    // Delete old pod if exists
-                    sh 'kubectl delete pod portfolio-app --ignore-not-found'
+                // Ensure Minikube is running
+                sh 'minikube start'
 
-                    // Run new pod
-                    sh "kubectl run portfolio-app --image=$DOCKER_IMAGE:latest --port=8080 --restart=Never"
+                // Apply your existing deployment and service YAML files
+                sh 'kubectl apply -f deployment.yaml'
+                sh 'kubectl apply -f service.yaml'
 
-                    // Expose pod as NodePort (ignore error if already exists)
-                    sh 'kubectl expose pod portfolio-app --type=NodePort --port=8080 || true'
-
-                    // Get service URL
-                    sh 'minikube service portfolio-app --url'
-                }
+                // Optional: check rollout status
+                sh 'kubectl rollout status deployment/portfolio-deployment'
             }
         }
     }
 
     post {
         always {
-            agent {
-                docker {
-                    image 'docker:24.0.2'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999'
-                }
-            }
-            steps {
-                sh 'docker logout'
-                sh 'docker system prune -f'
-            }
+            sh 'docker logout'
+            sh 'docker system prune -f'
         }
     }
 }
