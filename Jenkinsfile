@@ -1,14 +1,9 @@
 pipeline {
-    agent {
-        docker {
-            image 'docker:24.0.2'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999' // Replace 999 with the host's docker group GID
-        }
-    }
+    agent none // Run on the default Jenkins node
 
     environment {
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
-        DOCKER_CONFIG = "${WORKSPACE}/.docker"
+        DOCKER_CONFIG = "${WORKSPACE}/.docker" // Ensure Docker config is in a writable directory
     }
 
     stages {
@@ -37,6 +32,13 @@ pipeline {
             steps {
                 sh 'docker push $DOCKER_IMAGE:latest'
             }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout' // Log out of Docker Hub to avoid storing credentials
+            sh 'docker system prune -f' // Clean up unused Docker images and containers
         }
     }
 }
