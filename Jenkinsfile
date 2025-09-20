@@ -1,13 +1,14 @@
 pipeline {
     agent {
         docker {
-            image 'docker:24.0.2' // official Docker CLI image
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
+            image 'docker:24.0.2'
+            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999' // Replace 999 with the host's docker group GID
         }
     }
 
     environment {
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
+        DOCKER_CONFIG = "${WORKSPACE}/.docker"
     }
 
     stages {
@@ -19,6 +20,7 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
+                sh 'mkdir -p ${WORKSPACE}/.docker'
                 sh 'docker build -t $DOCKER_IMAGE:latest .'
             }
         }
