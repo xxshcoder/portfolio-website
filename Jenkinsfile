@@ -40,15 +40,22 @@ pipeline {
         }
 
         stage('Deploy to Minikube') {
+            agent {
+                docker {
+                    image 'bitnami/kubectl:latest'
+                    args '-v /home/jenkins/.kube:/root/.kube -v /home/jenkins/.minikube:/root/.minikube'
+                }
+            }
+            environment {
+                KUBECONFIG = '/root/.kube/config'
+            }
             steps {
-                // Set Minikube environment if using local Docker daemon
-                // sh 'eval $(minikube docker-env)'
-
-                // Pull image inside Minikube (if not using Minikube Docker)
-                sh 'kubectl delete pod portfolio-app --ignore-not-found'
-                sh 'kubectl run portfolio-app --image=$DOCKER_IMAGE:latest --port=8080 --restart=Never'
-                sh 'kubectl expose pod portfolio-app --type=NodePort --port=8080 || true'
-                sh 'minikube service portfolio-app --url'
+                sh '''
+                    kubectl delete pod portfolio-app --ignore-not-found
+                    kubectl run portfolio-app --image=$DOCKER_IMAGE:latest --port=8080 --restart=Never
+                    kubectl expose pod portfolio-app --type=NodePort --port=8080 || true
+                    minikube service portfolio-app --url
+                '''
             }
         }
     }
