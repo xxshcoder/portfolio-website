@@ -2,13 +2,13 @@ pipeline {
     agent {
         docker {
             image 'docker:24.0.2'
-            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999' // Replace 999 with the host's docker group GID
+            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999'
         }
     }
 
     environment {
         DOCKER_IMAGE = "xxshcoder/portfolio-website"
-        DOCKER_CONFIG = "${WORKSPACE}/.docker" // Avoid permission issues with /.docker
+        DOCKER_CONFIG = "${WORKSPACE}/.docker"
     }
 
     stages {
@@ -38,12 +38,25 @@ pipeline {
                 sh 'docker push $DOCKER_IMAGE:latest'
             }
         }
+
+        stage('Deploy to Minikube') {
+            steps {
+                // Set Minikube environment if using local Docker daemon
+                // sh 'eval $(minikube docker-env)'
+
+                // Pull image inside Minikube (if not using Minikube Docker)
+                sh 'kubectl delete pod portfolio-app --ignore-not-found'
+                sh 'kubectl run portfolio-app --image=$DOCKER_IMAGE:latest --port=8080 --restart=Never'
+                sh 'kubectl expose pod portfolio-app --type=NodePort --port=8080 || true'
+                sh 'minikube service portfolio-app --url'
+            }
+        }
     }
 
     post {
         always {
-            sh 'docker logout' // Log out of Docker Hub to avoid storing credentials
-            sh 'docker system prune -f' // Clean up unused Docker images and containers
+            sh 'docker logout'
+            sh 'docker system prune -f'
         }
     }
 }
