@@ -41,7 +41,7 @@ pipeline {
                         sh 'kubectl apply -f service.yaml'
                         
                         // Check rollout status
-                        sh 'kubectl rollout status deployment/portfolio-deployment --timeout=300s'
+                        sh 'kubectl rollout status deployment/portfolio-website --timeout=300s'
                         
                         // Get service info
                         sh 'kubectl get services'
@@ -53,6 +53,41 @@ pipeline {
                         echo "Image is still available at: $DOCKER_IMAGE:$DOCKER_TAG"
                         // Don't fail the entire pipeline
                         currentBuild.result = 'UNSTABLE'
+                    }
+                }
+            }
+        }
+        stage('Expose Service URL') {
+            steps {
+                script {
+                    try {
+                        // Get the service URL
+                        def serviceUrl = sh(
+                            script: 'minikube service portfolio-website-service --url',
+                            returnStdout: true
+                        ).trim()
+                        
+                        echo "================================================================"
+                        echo "🚀 DEPLOYMENT SUCCESSFUL!"
+                        echo "================================================================"
+                        echo "Your portfolio website is now accessible at:"
+                        echo "📍 URL: ${serviceUrl}"
+                        echo "================================================================"
+                        echo "You can access your application by opening the above URL in your browser."
+                        
+                        // Also show kubectl port-forward alternative
+                        echo ""
+                        echo "Alternative access methods:"
+                        echo "1. Direct URL: ${serviceUrl}"
+                        echo "2. Port forward: kubectl port-forward service/portfolio-website-service 8080:80"
+                        echo "   Then access at: http://localhost:8080"
+                        
+                        // Test if the service is responding
+                        sh "curl -s -o /dev/null -w 'HTTP Status: %{http_code}' ${serviceUrl} || echo 'Service check failed'"
+                        
+                    } catch (Exception e) {
+                        echo "Could not get service URL: ${e.getMessage()}"
+                        echo "You can manually get the URL with: minikube service portfolio-website-service --url"
                     }
                 }
             }
