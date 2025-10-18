@@ -70,6 +70,7 @@ resource "aws_security_group" "web" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
+    description = "HTTP"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -77,6 +78,7 @@ resource "aws_security_group" "web" {
   }
 
   ingress {
+    description = "HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -84,6 +86,7 @@ resource "aws_security_group" "web" {
   }
 
   ingress {
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -108,30 +111,7 @@ resource "aws_key_pair" "deployer" {
   public_key = var.ssh_public_key
 }
 
-# EC2 Instance
-resource "aws_instance" "web" {
-  ami                    = data.aws_ami.ubuntu.id
-  instance_type          = var.instance_type
-  key_name               = aws_key_pair.deployer.key_name
-  vpc_security_group_ids = [aws_security_group.web.id]
-  subnet_id              = aws_subnet.public.id
-
-  user_data = <<-EOF
-              #!/bin/bash
-              apt-get update
-              apt-get install -y python3 python3-pip
-              EOF
-
-  tags = {
-    Name = "web-server"
-  }
-}
-
-# Data Sources
-data "aws_availability_zones" "available" {
-  state = "available"
-}
-
+# Get latest Ubuntu AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"] # Canonical
@@ -147,9 +127,47 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# Outputs
-output "instance_public_ip" {
-  value       = aws_instance.web.public_ip
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+# EC2 Instance
+resource "aws_instance" "web" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t2.micro"
+  key_name               = aws_key_pair.deployer.key_name
+  vpc_security_group_ids = [aws_security_group.web.id]
+  subnet_id              = aws_subnet.public.id
+
+  root_block_device {
+    volume_size = 8
+    volume_type = "gp3"
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              apt-get update
+              apt-get install -y python3 python3-pip
+              EOF
+
+  tags = {
+    Name = "web-server"
+  }
+}
+
+# Elastic IP
+resource "aws_eip" "web" {
+  instance = aws_instance.web.id
+  domain   = "vpc"
+
+  tags = {
+    Name = "web-eip"
+  }
+}
+
+# Output the public IP
+output "public_ip" {
+  value       = aws_eip.web.public_ip
   description = "Public IP of the web server"
 }
 
