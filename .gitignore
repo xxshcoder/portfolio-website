@@ -1,0 +1,23 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+tfplan
+terraform.tfvars
+
+# Ansible
+*.retry
+inventory.ini
+
+# SSH Keys
+*.pem
+id_rsa*
+aws_deployer*
+
+# AWS
+.aws/
+*.csv
+
+# OS
+.DS_Store
